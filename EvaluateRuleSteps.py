@@ -16,7 +16,7 @@ if points >= 9 and dealer_points >= 5 and dealer_points <= 6 then stand
 490
 if points <= 4 and dealer_points <= 3 then stand
 492
-'''
+
 def selectMove(points, dealer_points, depth):
 	if points >= 9 and points <= 11 and dealer_points <= 7 and depth >= 1:
 		return 'double_down'
@@ -29,6 +29,45 @@ def selectMove(points, dealer_points, depth):
 	if points >= 9 and dealer_points >= 5 and dealer_points <= 6 and depth >= 5:
 		return 'stand'
 	if points <= 4 and dealer_points <= 3 and depth >= 6:
+		return 'stand'
+
+	return 'hit'
+'''
+'''
+258
+if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 and dealer_points <= 8 then split
+265
+if points >= 10 and points <= 11 and dealer_points <= 9 then double_down
+329
+if points >= 9 and points <= 10 and dealer_points >= 4 and dealer_points <= 6 then double_down
+338
+if points >= 13 and dealer_points <= 6 then stand
+437
+if points >= 17 then stand
+478
+if points >= 10 and dealer_points >= 5 and dealer_points <= 6 then stand
+488
+'''
+
+def twoCopiesOfCard(player_cards):
+	if len(player_cards) == 2:
+		if player_cards[0].name == player_cards[1].name:
+			return True
+
+	return False
+
+def selectMove(player_cards, points, dealer_points, depth):
+	if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 and dealer_points <= 8 and depth >= 1:
+		return 'split'
+	if points >= 10 and points <= 11 and dealer_points <= 9 and depth >= 2:
+		return 'double_down'
+	if points >= 9 and points <= 10 and dealer_points >= 4 and dealer_points <= 6 and depth >= 3:
+		return 'double_down'
+	if points >= 13 and dealer_points <= 6 and depth >= 4:
+		return 'stand'
+	if points >= 17 and depth >= 5:
+		return 'stand'
+	if points >= 10 and dealer_points >= 5 and dealer_points <= 6 and depth >= 6:
 		return 'stand'
 
 	return 'hit'
@@ -47,7 +86,7 @@ class GameEvaluator:
 		game.setup()
 		
 		while len(game.possible_moves()) > 0:
-			move = selectMove(max([0] + [y for y in game.points if y < 22]), max([0] + [y for y in game.dealer_points if y < 22]), depth)
+			move = selectMove(game.hand, max([0] + [y for y in game.points if y < 22]), max([0] + [y for y in game.dealer_points if y < 22]), depth)
 			game = game.push_move(move)
 
 		game.dealerPlays()

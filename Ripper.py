@@ -11,7 +11,8 @@ class DBEntry:
 		self.dealer_card = dealer_card
 		self.classification = ("", 0.0)
 
-f = open('fulldatatable.csv', 'rb')
+#f = open('fulldatatable.csv', 'rb')
+f = open('table100.csv', 'rb')
 
 database = []
 
@@ -103,7 +104,13 @@ def intersection(data1, data2):
 def difference(data1, data2):
 	return list(set(data1).difference(set(data2)))
 
-def findBestValueForParameter(data, targetClass, currentRuleData, parameter_list, operator_list):
+def twoCopiesOfCard(hand):
+	if hand[0] == hand[1]:
+		return True
+
+	return False
+
+def findBestValueForParameter(data, targetClass, currentRuleData, parameter_list, operator_list, atribution_parameter=None, atribution_operators=None):
 	data_values = {}
 	for (parameter, values) in parameter_list:
 		data_values[parameter] = {}
@@ -143,6 +150,23 @@ def findBestValueForParameter(data, targetClass, currentRuleData, parameter_list
 						bestRule['operator'] = operator
 						bestRule['value'] = value
 						bestRule['class'] = targetClass
+
+	if atribution_parameter != None and atribution_parameter != [] and atribution_operators != []:
+		for parameter in atribution_parameter:
+			for operator in atribution_operators:
+				temp_atr_data = findElementsWithAtribute(data, parameter, operator)
+				temp_atr_true_positives = returnDataFromClass(temp_atr_data, targetClass)
+				temp_atr_n = len(temp_atr_data)
+				temp_atr_n_plus = len(temp_atr_true_positives)
+
+				temp_gain = ruleGain(len(intersection(currentRuleData['true_positives'], temp_atr_true_positives)), temp_atr_n_plus, temp_atr_n, currentRuleData['n_plus'], currentRuleData['n'])
+				
+				if bestRule['gain'] == None or temp_gain > bestRule['gain']:
+					bestRule['gain'] = temp_gain
+					bestRule['parameter'] = parameter
+					bestRule['operator'] = operator
+					bestRule['value'] = None
+					bestRule['class'] = targetClass
 
 	#print "gain " + str(bestRule['gain'])
 	return bestRule
@@ -211,6 +235,18 @@ def findElementsWithCondition(data, parameter, operator, value):
 
 	return result
 
+def findElementsWithAtribute(data, parameter, operator):
+	result = []
+
+	for d in data:
+		dataDict = d.__dict__
+
+		#if dataDict[parameter] >= minmax[0] and dataDict[parameter] <= minmax[1]:
+		if operator(dataDict[parameter]):
+			result.append(d)
+
+	return result
+
 def findElementsForRule(data, rule):
 	temp_data = data
 
@@ -222,8 +258,12 @@ def findElementsForRule(data, rule):
 			dataDict = d.__dict__
 
 			#if dataDict[parameter] >= minmax[0] and dataDict[parameter] <= minmax[1]:
-			if condition['operator'](dataDict[condition['parameter']], condition['value']):
-				result.append(d)
+			if condition['value'] != None:
+				if condition['operator'](dataDict[condition['parameter']], condition['value']):
+					result.append(d)
+			else:
+				if condition['operator'](dataDict[condition['parameter']]):
+					result.append(d)
 
 		temp_data = result
 
@@ -321,6 +361,10 @@ def grow(growdb, targetClass):
 	possible_parameters = ['points', 'dealer_points']
 	possible_operators = [operator.le, operator.ge]
 
+	atribution_parameters = ['player_cards']
+	atribution_operators = [twoCopiesOfCard]
+	#possible_atribution_values = [('player_cards', [True])]
+
 	possible_parameters_values = []
 	for parameter in possible_parameters:
 		if parameter == 'points':
@@ -334,9 +378,9 @@ def grow(growdb, targetClass):
 
 	while True:
 		if currentRule == []:
-			bestRule = findBestValueForParameter(growdb, targetClass, currentRuleInfo, possible_parameters_values, possible_operators)
+			bestRule = findBestValueForParameter(growdb, targetClass, currentRuleInfo, possible_parameters_values, possible_operators, atribution_parameters, atribution_operators)
 		else:
-			bestRule = findBestValueForParameter(findElementsForRule(growdb, currentRule), targetClass, currentRuleInfo, possible_parameters_values, possible_operators)
+			bestRule = findBestValueForParameter(findElementsForRule(growdb, currentRule), targetClass, currentRuleInfo, possible_parameters_values, possible_operators, atribution_parameters, atribution_operators)
 
 		if bestRule['operator'] == None:
 			break
@@ -350,7 +394,11 @@ def grow(growdb, targetClass):
 		if currentRuleInfo['n'] == currentRuleInfo['n_plus']:
 			break
 
-		removeValueFromParameterList(possible_parameters_values, bestRule['parameter'], bestRule['value'])
+		if atribution_parameters == None or bestRule['parameter'] not in atribution_parameters:
+			removeValueFromParameterList(possible_parameters_values, bestRule['parameter'], bestRule['value'])
+		else:
+			atribution_parameters = None
+			atribution_operators = None
 
 	#printRule(currentRule)
 
@@ -363,8 +411,11 @@ def grow_i(growdb, targetClass, rule):
 
 	currentRule = []
 
-	possible_parameters = ['points', 'dealer_points']
+	possible_parameters = ['points', 'dealer_points', 'hand']
 	possible_operators = [operator.le, operator.ge]
+
+	atribution_parameters = ['player_cards']
+	atribution_operators = [twoCopiesOfCard]
 
 	possible_parameters_values = []
 	for parameter in possible_parameters:
@@ -382,9 +433,9 @@ def grow_i(growdb, targetClass, rule):
 
 	while True:
 		if currentRule == []:
-			bestRule = findBestValueForParameter(growdb, targetClass, currentRuleInfo, possible_parameters_values, possible_operators)
+			bestRule = findBestValueForParameter(growdb, targetClass, currentRuleInfo, possible_parameters_values, possible_operators, atribution_parameters, atribution_operators)
 		else:
-			bestRule = findBestValueForParameter(findElementsForRule(growdb, currentRule), targetClass, currentRuleInfo, possible_parameters_values, possible_operators)
+			bestRule = findBestValueForParameter(findElementsForRule(growdb, currentRule), targetClass, currentRuleInfo, possible_parameters_values, possible_operators, atribution_parameters, atribution_operators)
 
 		if bestRule['operator'] == None:
 			break
@@ -398,7 +449,12 @@ def grow_i(growdb, targetClass, rule):
 		if currentRuleInfo['n'] == currentRuleInfo['n_plus']:
 			break
 
-		removeValueFromParameterList(possible_parameters_values, bestRule['parameter'], bestRule['value'])
+		if atribution_parameters == None or bestRule['parameter'] not in atribution_parameters:
+			removeValueFromParameterList(possible_parameters_values, bestRule['parameter'], bestRule['value'])
+		else:
+			atribution_parameters = None
+			atribution_operators = None
+		#removeValueFromParameterList(possible_parameters_values, bestRule['parameter'], bestRule['value'])
 
 	#printRule(currentRule)
 
@@ -407,9 +463,12 @@ def grow_i(growdb, targetClass, rule):
 def printRule(cRule, targetClass=None):
 	ruleString = "if "
 	for condition in cRule:
-		ruleString = ruleString + condition['parameter']
-		ruleString = ruleString + (" >= " if condition['operator'] == operator.ge else " <= ")
-		ruleString = ruleString + str(condition['value']) + " and "
+		if condition['value'] != None:
+			ruleString = ruleString + condition['parameter']
+			ruleString = ruleString + (" >= " if condition['operator'] == operator.ge else " <= ")
+			ruleString = ruleString + str(condition['value']) + " and "
+		else:
+			ruleString = ruleString + "twoCopiesOfCard(" + condition['parameter'] + ") and "
 
 	ruleString = ruleString[:-4] + "then " + cRule[0]['class']
 
@@ -498,7 +557,7 @@ def removeRedundantConditions(database, rule):
 		rule.remove(rcondition)
 
 def compareConditions(cx, cy):
-	priority_list = {'parameter': ['points', 'dealer_points'], 'operator': [operator.ge, operator.le]}
+	priority_list = {'parameter': ['player_cards', 'points', 'dealer_points'], 'operator': [operator.ge, operator.le]}
 
 	if cx['parameter'] == cy['parameter']:
 		return priority_list['operator'].index(cx['operator']) - priority_list['operator'].index(cy['operator'])
@@ -711,7 +770,7 @@ def accuracyRatioPerRule(data, class_list, rList):
 
 #removeRedundantRules(database, rule_list)
 fillPoints(database)
-classList = ['stand', 'hit', 'double_down']
+classList = ['stand', 'hit', 'double_down', 'split']
 rule_list = []
 
 Ripper(database, classList, rule_list, 10)
