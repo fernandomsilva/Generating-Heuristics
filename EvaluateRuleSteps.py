@@ -49,6 +49,24 @@ if points >= 10 and dealer_points >= 5 and dealer_points <= 6 then stand
 488
 '''
 
+'''
+242
+if twoCopiesOfCard(player_cards) and points >= 11 and points <= 18 and dealer_points <= 6 then split
+267
+if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 then split
+272
+if twoCopiesOfCard(player_cards) and points <= 6 and dealer_points <= 7 then split
+284
+if twoCopiesOfCard(player_cards) and points >= 15 and points <= 18 and dealer_points >= 8 and dealer_points <= 10 then split
+286
+if points >= 10 and points <= 11 and dealer_points <= 9 then double_down
+350
+if points >= 10 and dealer_points <= 6 then stand
+444
+if points >= 17 then stand
+480
+'''
+
 def twoCopiesOfCard(player_cards):
 	if len(player_cards) == 2:
 		if player_cards[0].name == player_cards[1].name:
@@ -57,6 +75,7 @@ def twoCopiesOfCard(player_cards):
 	return False
 
 def selectMove(player_cards, points, dealer_points, depth):
+	'''
 	if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 and dealer_points <= 8 and depth >= 1:
 		return 'split'
 	if points >= 10 and points <= 11 and dealer_points <= 9 and depth >= 2:
@@ -68,6 +87,21 @@ def selectMove(player_cards, points, dealer_points, depth):
 	if points >= 17 and depth >= 5:
 		return 'stand'
 	if points >= 10 and dealer_points >= 5 and dealer_points <= 6 and depth >= 6:
+		return 'stand'
+	'''
+	if twoCopiesOfCard(player_cards) and points >= 11 and points <= 18 and dealer_points <= 6 and depth >= 1:
+		return 'split'
+	if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 and depth >= 2:
+		return 'split'
+	if twoCopiesOfCard(player_cards) and points <= 6 and dealer_points <= 7 and depth >= 3:
+		return 'split'
+	if twoCopiesOfCard(player_cards) and points >= 15 and points <= 18 and dealer_points >= 8 and dealer_points <= 10 and depth >= 4:
+		return 'split'
+	if points >= 10 and points <= 11 and dealer_points <= 9 and depth >= 5:
+		return 'double_down'
+	if points >= 10 and dealer_points <= 6 and depth >= 6:
+		return 'stand'
+	if points >= 17 and depth >= 7:
 		return 'stand'
 
 	return 'hit'
@@ -98,5 +132,5 @@ class GameEvaluator:
 
 		return float(data.sum()) / len(data)
 
-for i in range(0, 7):
+for i in range(0, 8):
 	print evaluateGame(i, 2000000)
