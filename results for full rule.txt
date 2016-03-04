@@ -1,0 +1,11 @@
+First rule:
+-0.07411
+8534
+points >= 16 and points <= 21 and dealer_points >= 2 and dealer_points <= 11 then stand
+
+Second rule:
+-0.055415
+13921
+points >= 16 and points <= 21 and dealer_points >= 2 and dealer_points <= 11 then stand
+points >= 9 and points <= 11 and dealer_points >= 2 and dealer_points <= 8 then double_down
+

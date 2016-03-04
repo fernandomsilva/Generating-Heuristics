@@ -89,6 +89,7 @@ def selectMove(player_cards, points, dealer_points, depth):
 	if points >= 10 and dealer_points >= 5 and dealer_points <= 6 and depth >= 6:
 		return 'stand'
 	'''
+	'''
 	if twoCopiesOfCard(player_cards) and points >= 11 and points <= 18 and dealer_points <= 6 and depth >= 1:
 		return 'split'
 	if twoCopiesOfCard(player_cards) and points >= 15 and points <= 16 and depth >= 2:
@@ -103,6 +104,11 @@ def selectMove(player_cards, points, dealer_points, depth):
 		return 'stand'
 	if points >= 17 and depth >= 7:
 		return 'stand'
+	'''
+	if points >= 16 and points <= 21 and dealer_points >= 2 and dealer_points <= 11 and depth >= 1:
+		return 'stand'
+	if points >= 9 and points <= 11 and dealer_points >= 2 and dealer_points <= 8 and depth >= 2:
+		return 'double_down'
 
 	return 'hit'
 
@@ -132,5 +138,5 @@ class GameEvaluator:
 
 		return float(data.sum()) / len(data)
 
-for i in range(0, 8):
+for i in range(0, 3):
 	print evaluateGame(i, 2000000)

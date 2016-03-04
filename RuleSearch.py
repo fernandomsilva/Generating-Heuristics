@@ -6,6 +6,8 @@ import pandas as pd
 
 import multiprocessing
 
+import time
+
 class RuleCondition:
 	def __init__(self, parameter, operator, value):
 		self.parameter = parameter
@@ -15,6 +17,18 @@ class RuleCondition:
 	def __str__(self):
 		oper = "<=" if self.operator == operator.le else ">="
 		return self.parameter + " " + oper + " " + str(self.value)
+
+class Counter(object):
+    def __init__(self):
+        self.val = multiprocessing.Value('i', 0)
+
+    def increment(self, n=1):
+        with self.val.get_lock():
+            self.val.value += n
+
+    @property
+    def value(self):
+        return self.val.value
 
 
 def loadRuleList(filename):
@@ -62,6 +76,8 @@ def selectMove(rList, default_move, game):
 
 def evaluateGame(rList, n=200000):
 	evaluator = GameEvaluator(deck=make_deck(8))
+	c.increment()
+	print c.value
 	return evaluator.Experiment(rList, n)
 
 class GameEvaluator:
@@ -89,34 +105,41 @@ class GameEvaluator:
 		return float(data.sum()) / len(data)
 
 def searchForRule(cList, possible_rules):
+	start_time = time.time()
+
 	database = []
+	i = 0
 	for c in cList:
 		for rule in possible_rules:
 			database.append([(rule,c)])
+			i = i + 1
+
+	rule_set = database[8534]
+	temp_db = []
+
+	for l in database:
+		temp = copy.copy(rule_set)
+		temp.extend(l)
+		temp_db.append(temp)
+
+	database = copy.copy(temp_db)
 
 	p = multiprocessing.Pool(multiprocessing.cpu_count())
 	mapped = p.map(evaluateGame, database)
 
-	#p.terminate()
-	#mapped = p.map(printNum, database)
+	print("--- %s seconds ---" % (time.time() - start_time))
 
-	#max_val1 = -100.0
 	max_val1 = max(mapped)
 	index1 = mapped.index(max_val1)
 	print max_val1
 	print index1
 
-	#mapped = []
-	#mapped = p.map(evaluateGame, database)
-	#max_val2 = max(mapped)
-	#index2 = mapped.index(max_val2) + 16000
-	#print max_val2
-	#print index2	
+	for i in range(0, 2):
+		print str(database[index1][i][0][0]) + " and " + str(database[index1][i][0][1]) + " and " + str(database[index1][i][0][2]) + " and " + str(database[index1][i][0][3]) + " then " + database[index1][i][1]
 
-	#if max_val1 > max_val2:
-	print str(database[index1][0][0][0]) + " and " + str(database[index1][0][0][1]) + " and " + str(database[index1][0][0][2]) + " and " + str(database[index1][0][0][3]) + " then " + database[index1][0][1]
-	#else:
-	#	print str(database[index2][0][0][0]) + " and " + str(database[index2][0][0][1]) + " and " + str(database[index2][0][0][2]) + " and " + str(database[index2][0][0][3]) + " then " + database[index2][0][1]
+	p.close()
+
+c = Counter()
 
 default_class = 'hit'
 #classList = ['stand', 'double_down', 'split']
